@@ -10,15 +10,18 @@ import { fileURLToPath } from 'url';
 
 dotenv.config();
 
-// Rutas absolutas seguras
+// Paths seguros
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 const app = express();
 const server = http.createServer(app);
-const io = new SocketIOServer(server, { cors: { origin: true, credentials: true } });
+const io = new SocketIOServer(server, {
+  cors: { origin: true, credentials: true }
+});
 
+// Middlewares
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
@@ -28,9 +31,9 @@ app.get('/', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 // ======= Estado en memoria =======
 let config = {
   min: 1,
-  max: 10,              // 5 | 10 | 20
-  touchesToWin: 5,      // veces que debe salir un número para ganar
-  winnersPerRound: 3,   // cuántos ganadores cierran la ronda
+  max: 10,            // 5 | 10 | 20
+  touchesToWin: 5,    // veces que debe salir un número para ganar
+  winnersPerRound: 3, // cuántos ganadores cierran la ronda
 };
 let counts = {};        // { numero: veces }
 let drawn = [];         // historial
@@ -90,9 +93,7 @@ function drawOne() {
   counts[n] = (counts[n] || 0) + 1;
   drawn.push(n);
 
-  if (!winners.includes(n) && counts[n] >= config.touchesToWin) {
-    winners.push(n);
-  }
+  if (!winners.includes(n) && counts[n] >= config.touchesToWin) winners.push(n);
 
   const payload = { number: n, counts, drawn, winners, config, plannedWinners, stealthLeft: stealthQueue.length };
   io.emit('draw', payload);
@@ -126,18 +127,25 @@ function buildStealthQueue(targets, gapMin = 1, gapMax = 4) {
 }
 
 // ======= Auth helpers =======
-function signToken() { return jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' }); }
+function signToken() {
+  return jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
+}
 function authMiddleware(req, res, next) {
-  const token = req.cookies['token'] || (req.headers.authorization?.split(' ')[1]);
+  const bearer = req.headers.authorization?.split(' ')[1];
+  const token = bearer || req.cookies['token'];
   try {
     const data = jwt.verify(token, JWT_SECRET);
     if (data.role !== 'admin') throw new Error('forbidden');
     next();
-  } catch { return res.status(401).json({ ok: false, error: 'Unauthorized' }); }
+  } catch {
+    return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  }
 }
 
 // ======= Rutas públicas =======
-app.get('/api/state', (_req, res) => res.json({ config, counts, drawn, winners, isRoundActive }));
+app.get('/api/state', (_req, res) =>
+  res.json({ config, counts, drawn, winners, isRoundActive })
+);
 
 // ======= Rutas admin =======
 app.post('/api/login', (req, res) => {
@@ -146,7 +154,16 @@ app.post('/api/login', (req, res) => {
     return res.status(401).json({ ok: false, error: 'Clave incorrecta' });
   }
   const token = signToken();
-  res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 1000 * 60 * 60 * 12 });
+
+  // cookie robusta (en Render es secure)
+  res.cookie('token', token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 1000 * 60 * 60 * 12
+  });
+
+  // devolvemos el token para usarlo en Authorization
   res.json({ ok: true, token });
 });
 
@@ -200,7 +217,7 @@ app.post('/api/admin/makewin', authMiddleware, (req, res) => {
   res.json({ ok: true, added: faltan, presetQueue, prediction: prediction() });
 });
 
-// 👉 Plan secreto: aparenta aleatoriedad para el público
+// 👉 Plan secreto
 app.post('/api/admin/plan', authMiddleware, (req, res) => {
   const { winners: ws = [], gapMin = 1, gapMax = 4 } = req.body;
   if (!Array.isArray(ws) || ws.length === 0) {
@@ -228,4 +245,6 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT} (sirviendo ${PUBLIC_DIR})`));
+server.listen(PORT, () =>
+  console.log(`Servidor en http://localhost:${PORT} (sirviendo ${PUBLIC_DIR})`)
+);

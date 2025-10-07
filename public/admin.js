@@ -4,20 +4,28 @@ const loginBox = $('login');
 const panel = $('panel');
 const toasts = document.getElementById('toasts');
 
+let ADMIN_TOKEN = localStorage.getItem('ADMIN_TOKEN') || null;
+
+// ---- mini toasts ----
 function toast(msg) {
   if (!toasts) { alert(msg); return; }
   const el = document.createElement('div');
   el.className = 'toast';
   el.textContent = msg;
   toasts.appendChild(el);
-  setTimeout(() => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(6px)';
-  }, 2200);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(6px)'; }, 2200);
   setTimeout(() => el.remove(), 2600);
 }
 
-// -------- Auth ----------
+// ---- fetch con Authorization siempre ----
+async function authFetch(url, options = {}) {
+  const headers = options.headers ? { ...options.headers } : {};
+  const token = ADMIN_TOKEN || localStorage.getItem('ADMIN_TOKEN');
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, { credentials: 'same-origin', ...options, headers });
+}
+
+// -------- Login ----------
 $('btn-login').onclick = async () => {
   const password = $('pwd').value.trim();
   const res = await fetch('/api/login', {
@@ -27,6 +35,11 @@ $('btn-login').onclick = async () => {
   });
   const data = await res.json();
   if (!data.ok) { toast('🔐 Clave incorrecta'); return; }
+
+  // guarda el token para usarlo por header
+  ADMIN_TOKEN = data.token;
+  localStorage.setItem('ADMIN_TOKEN', ADMIN_TOKEN);
+
   loginBox.style.display = 'none';
   panel.style.display = 'block';
   loadState();
@@ -38,7 +51,7 @@ $('btn-save').onclick = async () => {
   const touchesToWin = Number($('touches').value);
   const winnersPerRound = Number($('winnersPerRound').value);
 
-  const res = await fetch('/api/admin/config', {
+  const res = await authFetch('/api/admin/config', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ min: 1, max, touchesToWin, winnersPerRound })
@@ -51,13 +64,13 @@ $('btn-save').onclick = async () => {
 };
 
 $('btn-reset').onclick = async () => {
-  await fetch('/api/admin/round/reset', { method: 'POST' });
+  await authFetch('/api/admin/round/reset', { method: 'POST' });
   toast('🔁 Ronda reiniciada');
   loadState();
 };
 
 $('btn-draw').onclick = async () => {
-  await fetch('/api/admin/draw', { method: 'POST' });
+  await authFetch('/api/admin/draw', { method: 'POST' });
   toast('🎱 Bola forzada');
   loadState();
 };
@@ -71,7 +84,7 @@ $('btn-preset').onclick = async () => {
 
   if (!arr.length) { toast('Agrega al menos un número'); return; }
 
-  const res = await fetch('/api/admin/preset', {
+  const res = await authFetch('/api/admin/preset', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ numbers: arr })
@@ -100,7 +113,7 @@ $('btn-plan').onclick = async () => {
   const gapMin = Number.isFinite(g1) ? g1 : 1;
   const gapMax = Number.isFinite(g2) ? g2 : Math.max(gapMin, 4);
 
-  const res = await fetch('/api/admin/plan', {
+  const res = await authFetch('/api/admin/plan', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ winners, gapMin, gapMax })
@@ -114,38 +127,39 @@ $('btn-plan').onclick = async () => {
 
 // -------- Carga de estado ----------
 async function loadState() {
-  const res = await fetch('/api/admin/config');
+  // si no hay token todavía, quédate en login
+  if (!ADMIN_TOKEN && !localStorage.getItem('ADMIN_TOKEN')) {
+    loginBox.style.display = 'block';
+    panel.style.display = 'none';
+    return;
+  }
+
+  const res = await authFetch('/api/admin/config');
   if (res.status === 401) {
     toast('Sesión expirada. Vuelve a entrar.');
-    location.reload();
+    localStorage.removeItem('ADMIN_TOKEN');
+    ADMIN_TOKEN = null;
+    loginBox.style.display = 'block';
+    panel.style.display = 'none';
     return;
   }
 
   const data = await res.json();
-
   $('range').value = data.config.max;
   $('touches').value = data.config.touchesToWin;
   $('winnersPerRound').value = data.config.winnersPerRound ?? 3;
 
   renderQueue(data.presetQueue);
   $('state').textContent = JSON.stringify(
-    {
-      config: data.config,
-      counts: data.counts,
-      drawn: data.drawn,
-      winners: data.winners
-    },
-    null,
-    2
+    { config: data.config, counts: data.counts, drawn: data.drawn, winners: data.winners },
+    null, 2
   );
   renderPrediction(data.prediction);
 
   try {
-    const p = await (await fetch('/api/admin/plan')).json();
+    const p = await (await authFetch('/api/admin/plan')).json();
     if (p.ok) renderPlan(p);
-  } catch (_) {
-    // no-op
-  }
+  } catch (_) { /* no-op */ }
 }
 
 // -------- Renders auxiliares ----------
@@ -155,23 +169,20 @@ function renderQueue(q) {
 
 function renderPrediction(p) {
   if (!p || !p.list) { $('predict').innerHTML = '—'; return; }
-
-  const rows = p.list
-    .map((item) => {
-      const badge = item.isWinner ? ' (GANADOR)' : '';
-      return `
-        <tr>
-          <td>${item.number}${badge}</td>
-          <td>${item.have}</td>
-          <td>${item.inQueue}</td>
-          <td>${item.remaining}</td>
-          <td>${item.remaining > 0
-          ? `<button data-make="${item.number}" class="btn btn-ghost">Hacer ganar</button>`
-          : '—'
-        }</td>
-        </tr>`;
-    })
-    .join('');
+  const rows = p.list.map((item) => {
+    const badge = item.isWinner ? ' (GANADOR)' : '';
+    return `
+      <tr>
+        <td>${item.number}${badge}</td>
+        <td>${item.have}</td>
+        <td>${item.inQueue}</td>
+        <td>${item.remaining}</td>
+        <td>${item.remaining > 0
+        ? `<button data-make="${item.number}" class="btn btn-ghost">Hacer ganar</button>`
+        : '—'
+      }</td>
+      </tr>`;
+  }).join('');
 
   $('predict').innerHTML = `
     <div class="table-wrap">
@@ -188,7 +199,7 @@ function renderPrediction(p) {
   $('predict').querySelectorAll('button[data-make]').forEach((btn) => {
     btn.onclick = async () => {
       const number = Number(btn.getAttribute('data-make'));
-      const res = await fetch('/api/admin/makewin', {
+      const res = await authFetch('/api/admin/makewin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ number })
@@ -210,5 +221,8 @@ function renderPlan(data) {
 }
 
 // Arranque
-// (si no hay sesión, el backend devuelve 401 y se queda en login)
+if (ADMIN_TOKEN) { // si quedó sesión previa
+  loginBox.style.display = 'none';
+  panel.style.display = 'block';
+}
 loadState();
