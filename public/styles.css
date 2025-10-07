@@ -1,0 +1,247 @@
+:root {
+  /* Escala y colores base compartidos */
+  --ball: clamp(220px, 26vw, 380px);
+  --reel: calc(var(--ball) - 70px);
+  --bg1: #5b2cff;
+  --bg2: #1b1340;
+  --bg3: #2a1f59;
+  --card: #0f0c1aee;
+  --card-2: #1b1530ee;
+  --glass: rgba(255, 255, 255, .06);
+  --text: #ffffff;
+  --muted: #cfd1ff;
+  --accent: #ffd166;
+  --accent-2: #ff9f1a;
+  --ring: #b8b9ff;
+  --shadow: 0 18px 40px rgba(0, 0, 0, .35);
+  --radius: 18px;
+}
+
+* {
+  box-sizing: border-box
+}
+
+html,
+body {
+  height: 100%
+}
+
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  color: var(--text);
+  background: radial-gradient(1400px 700px at 50% -100px, #7f63ff33, transparent),
+    radial-gradient(900px 500px at 0% 10%, #7f63ff22, transparent),
+    linear-gradient(180deg, var(--bg1), var(--bg2));
+  min-height: 100vh;
+}
+
+.layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px clamp(16px, 4vw, 36px)
+}
+
+/* Barra superior reutilizable */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  backdrop-filter: saturate(1.4) blur(8px);
+  background: linear-gradient(180deg, #120e22cc, #0c0a18cc);
+  border: 1px solid #2f2954;
+  border-radius: 14px
+}
+
+.topbar h1 {
+  font-size: 16px;
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: .3px
+}
+
+.badge {
+  margin-left: auto;
+  background: #2a2250;
+  border: 1px solid #3b316e;
+  color: var(--muted);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px
+}
+
+/* Contenedor de tarjetas (grid base) */
+.container {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: 1.15fr 1fr;
+  align-items: start
+}
+
+@media (max-width:980px) {
+  .container {
+    grid-template-columns: 1fr
+  }
+}
+
+.card {
+  background: linear-gradient(180deg, var(--card), var(--card-2));
+  border-radius: var(--radius);
+  padding: 18px 18px 16px;
+  box-shadow: var(--shadow);
+  border: 1px solid #2a2350
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 12px
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(18px, 2vw, 20px);
+  letter-spacing: .2px
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 12px;
+  opacity: .95
+}
+
+/* Botonera */
+.btn {
+  appearance: none;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .06s ease, filter .15s ease, box-shadow .15s ease
+}
+
+.btn:active {
+  transform: translateY(1px)
+}
+
+.btn[disabled] {
+  opacity: .6;
+  cursor: not-allowed
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #1a133a;
+  box-shadow: 0 8px 20px #0006
+}
+
+.btn-primary:hover {
+  filter: brightness(1.03)
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #3b316e
+}
+
+.btn-ghost:hover {
+  background: #2a2250
+}
+
+/* Formularios (inputs/selects genéricos) */
+input,
+select {
+  background: #20193c;
+  color: var(--text);
+  border: 1px solid #3b316e;
+  border-radius: 12px;
+  padding: 10px
+}
+
+label {
+  font-size: 12px;
+  opacity: .9
+}
+
+/* Tablas genéricas */
+table {
+  width: 100%;
+  border-collapse: collapse
+}
+
+th,
+td {
+  padding: 8px;
+  border-bottom: 1px solid #2f2954;
+  text-align: left
+}
+
+/* Toasts (compartidos) */
+.toasts {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 60
+}
+
+.toast {
+  background: linear-gradient(180deg, #141026, #0f0b1d);
+  border: 1px solid #2f2954;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  min-width: 260px
+}
+
+/* Accesibilidad */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 10px
+}
+
+/* Animación */
+@keyframes slowspin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Solo rota el aro decorativo, no el SVG con el número */
+.ball.autorotate .ball-ring {
+  animation: slowspin 18s linear infinite;
+  will-change: transform;
+}
+
+/* En móvil, un poco más rápido */
+@media (max-width: 720px) {
+  .ball.autorotate .ball-ring {
+    animation-duration: 12s;
+  }
+}
+
+/* Respeto accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .ball.autorotate .ball-ring {
+    animation: none;
+  }
+}

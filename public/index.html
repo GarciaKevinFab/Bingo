@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Bingo — Sala · fullscreen</title>
+  <meta name="theme-color" content="#5b2cff" />
+
+  <style>
+    :root {
+      /* Bola dimensionada por el lado limitante del viewport */
+      --ball: clamp(160px, min(65dvw, 58dvh), 480px);
+      --reel: calc(var(--ball) - clamp(44px, 10vmin, 72px));
+      --bg1: #5b2cff;
+      --bg2: #1b1340;
+      --card: #0f0c1aee;
+      --card-2: #1b1530ee;
+      --text: #fff;
+      --muted: #cfd1ff;
+      --accent: #ffd166;
+      --ring: #b8b9ff;
+      --shadow: 0 18px 40px rgba(0, 0, 0, .35);
+      --radius: 18px;
+    }
+
+    /* ===== Reset y anti-scroll en desktop ===== */
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* <- mata barras */
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background:
+        radial-gradient(1400px 700px at 50% -100px, #7f63ff33, transparent),
+        radial-gradient(900px 500px at 0% 10%, #7f63ff22, transparent),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+    }
+
+    /* ===== Layout FULL SCREEN ===== */
+    .layout {
+      height: 100dvh;
+      /* ocupa siempre todo */
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      /* topbar | bola | card */
+      gap: 12px;
+      width: 100%;
+      padding:
+        env(safe-area-inset-top) clamp(12px, 3vw, 24px) env(safe-area-inset-right) clamp(12px, 3vw, 24px) env(safe-area-inset-bottom) clamp(12px, 3vw, 24px) env(safe-area-inset-left);
+    }
+
+    /* Topbar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      backdrop-filter: saturate(1.4) blur(8px);
+      background: linear-gradient(180deg, #120e22cc, #0c0a18cc);
+      border: 1px solid #2f2954;
+      border-radius: 14px;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: .3px
+    }
+
+    .badge {
+      margin-left: auto;
+      background: #2a2250;
+      border: 1px solid #3b316e;
+      color: var(--muted);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px
+    }
+
+    /* HERO centro elástico */
+    .hero {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      overflow: clip;
+    }
+
+    .ball {
+      width: var(--ball);
+      height: var(--ball);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      position: relative
+    }
+
+    .reel {
+      width: var(--reel);
+      height: var(--reel);
+      border-radius: 50%;
+      overflow: hidden;
+      position: relative;
+      background: #6e3bff;
+      box-shadow: inset 0 0 0 16px #ececec, 0 24px 60px rgba(0, 0, 0, .45);
+      z-index: 2;
+    }
+
+    .track {
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 100%;
+      will-change: transform
+    }
+
+    .frame {
+      width: 100%;
+      height: var(--reel);
+      display: grid;
+      place-items: center
+    }
+
+    .frame svg {
+      width: 86%;
+      height: 86%
+    }
+
+    .reel.spinning {
+      filter: blur(.6px) saturate(1.02)
+    }
+
+    /* Aro decorativo – jamás excede el viewport => no crea scroll */
+    .ball-ring {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: min(115%, 90dvw);
+      height: min(115%, 90dvh);
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 8px #fff, 0 0 0 18px #ffffff10, 0 26px 60px #0008;
+      pointer-events: none;
+      opacity: .5;
+      z-index: 1;
+    }
+
+    @keyframes slowspin {
+      from {
+        transform: translate(-50%, -50%) rotate(0)
+      }
+
+      to {
+        transform: translate(-50%, -50%) rotate(360deg)
+      }
+    }
+
+    .ball.autorotate .ball-ring {
+      animation: slowspin 18s linear infinite;
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      .ball.autorotate .ball-ring {
+        animation: none
+      }
+    }
+
+    /* Card inferior (acciones + cfg + historial) */
+    .card {
+      width: 100%;
+      background: linear-gradient(180deg, var(--card), var(--card-2));
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid #2a2350;
+      overflow: hidden;
+    }
+
+    .card-head {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-bottom: 8px
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(18px, 2vw, 20px);
+      letter-spacing: .2px
+    }
+
+    .sub {
+      width: 100%;
+      color: var(--muted);
+      font-size: 12px;
+      opacity: .95;
+      margin-top: 2px
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .06s ease, filter .15s ease, box-shadow .15s ease
+    }
+
+    .btn:active {
+      transform: translateY(1px)
+    }
+
+    .btn[disabled] {
+      opacity: .6;
+      cursor: not-allowed
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #1a133a;
+      box-shadow: 0 8px 20px #0006
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.03)
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: #fff;
+      border: 1px solid #3b316e
+    }
+
+    .btn-ghost:hover {
+      background: #2a2250
+    }
+
+    .history {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px
+    }
+
+    .tag {
+      --c: #694bff;
+      background: linear-gradient(180deg, #221b45, #1b1636);
+      border: 1px solid #3b316e;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-weight: 800;
+      letter-spacing: .3px;
+      box-shadow: inset 0 -4px 10px #0003, 0 6px 16px #0005;
+      position: relative
+    }
+
+    .tag[data-color] {
+      --c: attr(data-color color)
+    }
+
+    .tag::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      box-shadow: 0 0 0 2px var(--c);
+      opacity: .28
+    }
+
+    /* Tooltips y toasts */
+    [data-tip] {
+      position: relative
+    }
+
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute;
+      inset: auto auto calc(100% + 10px) 0;
+      background: #0e0b17;
+      border: 1px solid #3b316e;
+      padding: 6px 8px;
+      border-radius: 8px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: .15s;
+      pointer-events: none;
+      white-space: nowrap;
+      font-size: 12px;
+      color: #cfd1ff
+    }
+
+    [data-tip]:hover::after {
+      opacity: 1;
+      transform: translateY(0)
+    }
+
+    .toasts {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 60;
+      max-width: 96dvw
+    }
+
+    .toast {
+      background: linear-gradient(180deg, #141026, #0f0b1d);
+      border: 1px solid #2f2954;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      min-width: 260px
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+      border-radius: 10px
+    }
+
+    /* Paisaje móvil bajo */
+    @media (orientation:landscape) and (max-height:480px) {
+      :root {
+        --ball: min(52dvh, 52dvw);
+        --reel: calc(var(--ball) - 40px)
+      }
+
+      .card {
+        padding: 12px
+      }
+
+      .btn {
+        padding: 10px 12px;
+        border-radius: 12px
+      }
+
+      .ball-ring {
+        width: min(110%, 90dvw);
+        height: min(110%, 90dvh)
+      }
+    }
+
+    @media (max-height:360px) {
+      .ball-ring {
+        display: none
+      }
+    }
+
+    /* ultra-compacto */
+  </style>
+</head>
+
+<body>
+  <main class="layout" role="main">
+    <div class="topbar" aria-live="polite">
+      <h1>🎱 Bingo — Sala pública</h1>
+      <span class="badge">Atajo: <kbd>R</kbd> reinicia</span>
+    </div>
+
+    <section class="hero" aria-label="Sorteo actual">
+      <div class="ball autorotate" id="ball" role="img" aria-label="Bola actual">
+        <div class="ball-ring" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <article class="card" aria-labelledby="t-sala">
+      <div class="card-head">
+        <div>
+          <h2 id="t-sala" class="title">Sala</h2>
+          <div class="sub" id="cfg">Rango: — | Gana: —</div>
+        </div>
+        <div class="actions" role="group" aria-label="Acciones de la ronda">
+          <button id="btn-reset" class="btn btn-ghost" data-tip="Reinicia toda la ronda (R)">Reiniciar</button>
+          <button id="btn-draw" class="btn btn-primary" data-tip="Saca una bola al azar">Sacar bola</button>
+        </div>
+      </div>
+      <div class="history" id="history" aria-live="polite" aria-label="Historial de bolas"></div>
+    </article>
+  </main>
+
+  <div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // ===== DOM =====
+    const $ = (id) => document.getElementById(id);
+    const ball = $('ball'), historyEl = $('history'), cfgEl = $('cfg');
+    const btnDraw = $('btn-draw'), btnReset = $('btn-reset');
+    const toasts = $('toasts');
+    const socket = io();
+
+    let config = { min: 1, max: 10, touchesToWin: 5, winnersPerRound: 3 };
+    let spinning = false, reel, track, frameH = 260, anim;
+
+    const toast = (msg) => {
+      const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg; toasts.appendChild(el);
+      setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(6px)'; }, 2200);
+      setTimeout(() => el.remove(), 2600);
+    };
+
+    // ===== Bola SVG =====
+    const colorFor = (n) => ['#D32F2F', '#1976D2', '#388E3C', '#F57C00', '#7B1FA2', '#C2185B', '#0097A7', '#FBC02D', '#455A64', '#5D4037'][(n - 1) % 10];
+    const shade = (hex, pct) => { let f = parseInt(hex.slice(1), 16), t = pct < 0 ? 0 : 255, p = Math.abs(pct) / 100, R = f >> 16, G = f >> 8 & 255, B = f & 255; return "#" + (0x1000000 + (Math.round((t - R) * p) + R) * 0x10000 + (Math.round((t - G) * p) + G) * 0x100 + (Math.round((t - B) * p) + B)).toString(16).slice(1) };
+
+    function ballSVG(n, color) {
+      if (n === '—') n = '';
+      const id = `g${color.replace('#', '')}`;
+      return `
+      <svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg" aria-label="ball-${n}">
+        <defs>
+          <radialGradient id="${id}" cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.28"/>
+            <stop offset="60%" stop-color="${color}"/>
+            <stop offset="100%" stop-color="${shade(color, -25)}"/>
+          </radialGradient>
+          <filter id="numShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000" flood-opacity="0.25"/>
+          </filter>
+        </defs>
+        <circle cx="140" cy="140" r="120" fill="url(#${id})"/>
+        <circle cx="140" cy="140" r="82" fill="#ffffff"/>
+        <text x="140" y="156" text-anchor="middle" font-size="96" font-weight="900" fill="#1b133a"
+              style="paint-order:stroke; stroke:#ffffff; stroke-width:6" filter="url(#numShadow)">${n}</text>
+      </svg>`;
+    }
+
+    // ===== Carrusel =====
+    function ensureReel() {
+      if (reel) return;
+      ball.innerHTML = `<div class="reel" id="reel"><div class="track" id="track"></div></div><div class="ball-ring" aria-hidden="true"></div>`;
+      reel = $('reel'); track = $('track'); calcFrameH();
+    }
+    function calcFrameH() { if (!reel) return; frameH = Math.round(reel.offsetHeight); track.querySelectorAll('.frame').forEach(f => f.style.height = frameH + 'px'); }
+    function setReelTo(number) { ensureReel(); calcFrameH(); track.style.transition = 'none'; track.style.transform = 'translateY(0)'; track.innerHTML = `<div class="frame" style="height:${frameH}px">${ballSVG(number, colorFor(number))}</div>`; }
+    const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+
+    function spinTo(target, framesBefore = 6) {
+      ensureReel(); calcFrameH(); if (spinning) cancelAnimationFrame(anim);
+      spinning = true; btnDraw.disabled = true; reel.classList.add('spinning');
+      const frames = []; for (let i = 0; i < framesBefore; i++) frames.push(rand(config.min, config.max)); frames.push(target);
+      track.innerHTML = frames.map(n => `<div class="frame" style="height:${frameH}px">${ballSVG(n, colorFor(n))}</div>`).join('');
+      track.style.transition = 'none'; track.style.transform = 'translateY(0)';
+      const distance = -frameH * (frames.length - 1), duration = 1200 + Math.random() * 700, t0 = performance.now();
+      const ease = x => 1 - Math.pow(1 - x, 3);
+      const step = (t) => {
+        const p = Math.min(1, (t - t0) / duration), y = distance * ease(p);
+        track.style.transform = `translateY(${y}px)`;
+        if (p < 1) { anim = requestAnimationFrame(step) } else { spinning = false; btnDraw.disabled = false; reel.classList.remove('spinning') }
+      };
+      anim = requestAnimationFrame(step);
+    }
+
+    // ===== Render =====
+    const renderCfg = () => { const w = config.winnersPerRound ?? 3; cfgEl.textContent = `Rango: ${config.min}–${config.max} | Gana: ${config.touchesToWin} | Ganadores por ronda: ${w}`; };
+    const addHistory = (n) => { const tag = document.createElement('span'); const col = colorFor(n); tag.className = 'tag'; tag.setAttribute('data-color', col); tag.style.setProperty('--c', col); tag.textContent = n; historyEl.prepend(tag); };
+
+    // ===== Sockets =====
+    socket.on('hydrate', ({ config: c, drawn }) => { config = c; renderCfg(); historyEl.innerHTML = ''; if (drawn?.length) { setReelTo(drawn[drawn.length - 1]); drawn.forEach(addHistory) } else { setReelTo('—') } });
+    socket.on('round:reset', ({ config: c }) => { config = c; historyEl.innerHTML = ''; renderCfg(); setReelTo('—'); toast('🔁 Ronda reiniciada') });
+    socket.on('draw', ({ number, config: c }) => { config = c; renderCfg(); spinTo(number, 5 + Math.floor(Math.random() * 4)); setTimeout(() => addHistory(number), 1400) });
+    socket.on('round:over', ({ winners, config: c }) => { config = c || config; toast(`🏁 Ronda terminada — Ganadores: ${winners?.join(', ') || '—'}`) });
+
+    // ===== Acciones =====
+    btnDraw.addEventListener('click', () => { if (spinning) return; socket.emit('public:draw') });
+    btnReset.addEventListener('click', async () => {
+      if (spinning) return; if (!confirm('¿Reiniciar la ronda? Se borrará el historial.')) return;
+      try { btnReset.disabled = true; btnDraw.disabled = true; const res = await fetch('/api/admin/round/reset', { method: 'POST' }); if (!res.ok) throw new Error('No se pudo reiniciar') }
+      catch (e) { toast(e.message || 'Error al reiniciar') }
+      finally { btnReset.disabled = false; btnDraw.disabled = false }
+    });
+    window.addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'r' && !spinning) btnReset.click() });
+
+    // Reframe tras resize/orientación
+    function reframe() {
+      if (!reel) return;
+      clearTimeout(window.__rf);
+      window.__rf = setTimeout(() => {
+        calcFrameH();
+        const last = historyEl.firstElementChild?.textContent || '—';
+        if (!spinning) setReelTo(last);
+      }, 100);
+    }
+    window.addEventListener('resize', reframe);
+    window.addEventListener('orientationchange', reframe);
+
+    // Inicio
+    setReelTo('—');
+  </script>
+</body>
+
+</html>

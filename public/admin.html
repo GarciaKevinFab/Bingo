@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bingo — Admin · v2</title>
+  <meta name="theme-color" content="#5b2cff" />
+  <!-- base styles (mismos del cliente Sala) -->
+  <link rel="stylesheet" href="/styles.css" />
+  <!-- estilos específicos del admin -->
+  <link rel="stylesheet" href="/admin.css" />
+</head>
+
+<body>
+  <main class="layout" role="main">
+    <div class="topbar">
+      <h1>🛠️ Bingo — Panel Admin</h1>
+      <span class="badge">.env · <code>ADMIN_PASSWORD</code></span>
+    </div>
+
+    <div class="container admin-single">
+      <article class="card">
+        <header class="card-head">
+          <h2 class="title">Admin</h2>
+        </header>
+
+        <!-- LOGIN -->
+        <section id="login" aria-label="Inicio de sesión">
+          <div class="form-row">
+            <div>
+              <label for="pwd">Contraseña</label>
+              <input id="pwd" type="password" placeholder="••••••" autocomplete="current-password" />
+            </div>
+            <div class="form-actions">
+              <button id="btn-login" class="btn btn-primary">Entrar</button>
+            </div>
+          </div>
+          <p class="notice">La contraseña se configura en <code>.env</code> como <code>ADMIN_PASSWORD</code>.</p>
+        </section>
+
+        <!-- PANEL -->
+        <section id="panel" style="display:none;" aria-label="Configuración de la sala">
+          <h3>Configuración</h3>
+          <div class="form-row">
+            <div>
+              <label for="range">Rango</label>
+              <select id="range">
+                <option value="5">1 – 5</option>
+                <option value="10" selected>1 – 10</option>
+                <option value="20">1 – 20</option>
+              </select>
+            </div>
+            <div>
+              <label for="touches">Veces para ganar</label>
+              <input id="touches" type="number" min="1" max="20" value="5" />
+            </div>
+            <div>
+              <label for="winnersPerRound">Ganadores por ronda</label>
+              <input id="winnersPerRound" type="number" min="1" max="10" value="3" />
+            </div>
+            <div class="form-actions gap">
+              <button id="btn-save" class="btn btn-primary">Guardar</button>
+              <button id="btn-reset" class="btn btn-ghost">Reiniciar ronda</button>
+              <button id="btn-draw" class="btn btn-ghost">Sacar (forzar)</button>
+            </div>
+          </div>
+
+          <h3 class="mt">Programar próximas bolas</h3>
+          <div class="form-row">
+            <div class="col-span-2">
+              <label for="preset">Números (separados por coma)</label>
+              <input id="preset" type="text" placeholder="14, 7, 7, 3" />
+            </div>
+            <div class="form-actions">
+              <button id="btn-preset" class="btn btn-primary">Agregar a la cola</button>
+            </div>
+          </div>
+          <p class="small">Cola actual: <span id="queue">—</span></p>
+
+          <h3 class="mt">Plan secreto (aparenta aleatorio)</h3>
+          <div class="form-row">
+            <div>
+              <label for="plan-winners">Ganadores (1–3 números)</label>
+              <input id="plan-winners" type="text" placeholder="Ej: 1, 14, 7" />
+            </div>
+            <div>
+              <label for="plan-gap">Separación aleatoria (min–max)</label>
+              <input id="plan-gap" type="text" value="1-4" />
+            </div>
+            <div class="form-actions">
+              <button id="btn-plan" class="btn btn-primary">Planear</button>
+            </div>
+          </div>
+          <p class="small">Plan actual: <span id="plan-current">—</span> | Cola oculta: <span id="plan-left">0</span>
+          </p>
+
+          <h3>Predicción (faltantes para ganar)</h3>
+          <div id="predict">—</div>
+
+          <h3>Estado</h3>
+          <pre id="state" class="state"></pre>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <!-- Toasts -->
+  <div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/admin.js"></script>
+</body>
+
+</html>
