@@ -9,7 +9,6 @@
 
   <style>
     :root {
-      /* Bola dimensionada por el lado limitante del viewport */
       --ball: clamp(160px, min(65dvw, 58dvh), 480px);
       --reel: calc(var(--ball) - clamp(44px, 10vmin, 72px));
       --bg1: #5b2cff;
@@ -24,7 +23,6 @@
       --radius: 18px;
     }
 
-    /* ===== Reset y anti-scroll en desktop ===== */
     * {
       box-sizing: border-box
     }
@@ -32,10 +30,9 @@
     html,
     body {
       height: 100%;
-      overflow: hidden;
+      overflow: hidden
     }
 
-    /* <- mata barras */
     body {
       margin: 0;
       color: var(--text);
@@ -46,20 +43,15 @@
         linear-gradient(180deg, var(--bg1), var(--bg2));
     }
 
-    /* ===== Layout FULL SCREEN ===== */
     .layout {
       height: 100dvh;
-      /* ocupa siempre todo */
       display: grid;
       grid-template-rows: auto 1fr auto;
-      /* topbar | bola | card */
       gap: 12px;
       width: 100%;
-      padding:
-        env(safe-area-inset-top) clamp(12px, 3vw, 24px) env(safe-area-inset-right) clamp(12px, 3vw, 24px) env(safe-area-inset-bottom) clamp(12px, 3vw, 24px) env(safe-area-inset-left);
+      padding: env(safe-area-inset-top) clamp(12px, 3vw, 24px) env(safe-area-inset-right) clamp(12px, 3vw, 24px) env(safe-area-inset-bottom) clamp(12px, 3vw, 24px) env(safe-area-inset-left);
     }
 
-    /* Topbar */
     .topbar {
       display: flex;
       align-items: center;
@@ -88,12 +80,11 @@
       font-size: 12px
     }
 
-    /* HERO centro elástico */
     .hero {
       min-height: 0;
       display: grid;
       place-items: center;
-      overflow: clip;
+      overflow: clip
     }
 
     .ball {
@@ -113,7 +104,7 @@
       position: relative;
       background: #6e3bff;
       box-shadow: inset 0 0 0 16px #ececec, 0 24px 60px rgba(0, 0, 0, .45);
-      z-index: 2;
+      z-index: 2
     }
 
     .track {
@@ -139,7 +130,6 @@
       filter: blur(.6px) saturate(1.02)
     }
 
-    /* Aro decorativo – jamás excede el viewport => no crea scroll */
     .ball-ring {
       position: absolute;
       left: 50%;
@@ -151,7 +141,7 @@
       box-shadow: inset 0 0 0 8px #fff, 0 0 0 18px #ffffff10, 0 26px 60px #0008;
       pointer-events: none;
       opacity: .5;
-      z-index: 1;
+      z-index: 1
     }
 
     @keyframes slowspin {
@@ -165,7 +155,7 @@
     }
 
     .ball.autorotate .ball-ring {
-      animation: slowspin 18s linear infinite;
+      animation: slowspin 18s linear infinite
     }
 
     @media (prefers-reduced-motion:reduce) {
@@ -174,7 +164,6 @@
       }
     }
 
-    /* Card inferior (acciones + cfg + historial) */
     .card {
       width: 100%;
       background: linear-gradient(180deg, var(--card), var(--card-2));
@@ -182,7 +171,7 @@
       padding: 16px;
       box-shadow: var(--shadow);
       border: 1px solid #2a2350;
-      overflow: hidden;
+      overflow: hidden
     }
 
     .card-head {
@@ -271,10 +260,6 @@
       position: relative
     }
 
-    .tag[data-color] {
-      --c: attr(data-color color)
-    }
-
     .tag::before {
       content: "";
       position: absolute;
@@ -284,7 +269,6 @@
       opacity: .28
     }
 
-    /* Tooltips y toasts */
     [data-tip] {
       position: relative
     }
@@ -339,7 +323,94 @@
       border-radius: 10px
     }
 
-    /* Paisaje móvil bajo */
+    /* Modal reinicio */
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      z-index: 80
+    }
+
+    .modal.is-open {
+      display: grid
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 6, 22, .55);
+      backdrop-filter: blur(3px) saturate(1.2);
+      animation: fadeIn .15s ease-out both
+    }
+
+    .modal-card {
+      position: relative;
+      z-index: 1;
+      width: min(560px, 92dvw);
+      background: linear-gradient(180deg, #141026, #0f0b1d);
+      border: 1px solid #3b316e;
+      border-radius: 16px;
+      box-shadow: 0 22px 60px rgba(0, 0, 0, .45);
+      padding: 18px;
+      transform: translateY(6px) scale(.98);
+      opacity: 0;
+      animation: popIn .18s ease-out .05s both
+    }
+
+    .modal-title {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 800
+    }
+
+    .modal-desc {
+      margin: 0 0 14px;
+      color: #cfd1ff;
+      opacity: .9;
+      font-size: 14px
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 8px
+    }
+
+    .btn-danger {
+      background: #ff7373;
+      color: #300;
+      border: none;
+      box-shadow: 0 8px 20px #0006
+    }
+
+    .btn-danger:hover {
+      filter: brightness(1.02)
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(.97)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1)
+      }
+    }
+
     @media (orientation:landscape) and (max-height:480px) {
       :root {
         --ball: min(52dvh, 52dvw);
@@ -366,8 +437,6 @@
         display: none
       }
     }
-
-    /* ultra-compacto */
   </style>
 </head>
 
@@ -399,6 +468,21 @@
     </article>
   </main>
 
+  <!-- Modal de reinicio -->
+  <div id="modal-reset" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="mr-title" aria-describedby="mr-desc">
+      <h3 id="mr-title" class="modal-title">Reiniciar ronda</h3>
+      <p id="mr-desc" class="modal-desc">
+        Esto borrará el historial, el conteo y los ganadores actuales. ¿Seguro que deseas continuar?
+      </p>
+      <div class="modal-actions">
+        <button id="mr-cancel" class="btn btn-ghost">Cancelar</button>
+        <button id="mr-confirm" class="btn btn-danger">Sí, reiniciar</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -420,7 +504,11 @@
     };
 
     // ===== Bola SVG =====
-    const colorFor = (n) => ['#D32F2F', '#1976D2', '#388E3C', '#F57C00', '#7B1FA2', '#C2185B', '#0097A7', '#FBC02D', '#455A64', '#5D4037'][(n - 1) % 10];
+    function colorFor(n) {
+      if (typeof n !== 'number' || !isFinite(n)) return '#6e3bff'; // seguro para '—'
+      const palette = ['#D32F2F', '#1976D2', '#388E3C', '#F57C00', '#7B1FA2', '#C2185B', '#0097A7', '#FBC02D', '#455A64', '#5D4037'];
+      return palette[(n - 1) % 10];
+    }
     const shade = (hex, pct) => { let f = parseInt(hex.slice(1), 16), t = pct < 0 ? 0 : 255, p = Math.abs(pct) / 100, R = f >> 16, G = f >> 8 & 255, B = f & 255; return "#" + (0x1000000 + (Math.round((t - R) * p) + R) * 0x10000 + (Math.round((t - G) * p) + G) * 0x100 + (Math.round((t - B) * p) + B)).toString(16).slice(1) };
 
     function ballSVG(n, color) {
@@ -446,50 +534,84 @@
     }
 
     // ===== Carrusel =====
-    function ensureReel() {
-      if (reel) return;
-      ball.innerHTML = `<div class="reel" id="reel"><div class="track" id="track"></div></div><div class="ball-ring" aria-hidden="true"></div>`;
-      reel = $('reel'); track = $('track'); calcFrameH();
-    }
+    function ensureReel() { if (reel) return; ball.innerHTML = '<div class="reel" id="reel"><div class="track" id="track"></div></div><div class="ball-ring" aria-hidden="true"></div>'; reel = $('reel'); track = $('track'); calcFrameH(); }
     function calcFrameH() { if (!reel) return; frameH = Math.round(reel.offsetHeight); track.querySelectorAll('.frame').forEach(f => f.style.height = frameH + 'px'); }
-    function setReelTo(number) { ensureReel(); calcFrameH(); track.style.transition = 'none'; track.style.transform = 'translateY(0)'; track.innerHTML = `<div class="frame" style="height:${frameH}px">${ballSVG(number, colorFor(number))}</div>`; }
+    function setReelTo(number) { ensureReel(); calcFrameH(); track.style.transition = 'none'; track.style.transform = 'translateY(0)'; track.innerHTML = '<div class="frame" style="height:' + frameH + 'px">' + ballSVG(number, colorFor(number)) + '</div>'; }
     const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
 
     function spinTo(target, framesBefore = 6) {
       ensureReel(); calcFrameH(); if (spinning) cancelAnimationFrame(anim);
       spinning = true; btnDraw.disabled = true; reel.classList.add('spinning');
       const frames = []; for (let i = 0; i < framesBefore; i++) frames.push(rand(config.min, config.max)); frames.push(target);
-      track.innerHTML = frames.map(n => `<div class="frame" style="height:${frameH}px">${ballSVG(n, colorFor(n))}</div>`).join('');
+      track.innerHTML = frames.map(n => '<div class="frame" style="height:' + frameH + 'px">' + ballSVG(n, colorFor(n)) + '</div>').join('');
       track.style.transition = 'none'; track.style.transform = 'translateY(0)';
       const distance = -frameH * (frames.length - 1), duration = 1200 + Math.random() * 700, t0 = performance.now();
       const ease = x => 1 - Math.pow(1 - x, 3);
-      const step = (t) => {
-        const p = Math.min(1, (t - t0) / duration), y = distance * ease(p);
-        track.style.transform = `translateY(${y}px)`;
-        if (p < 1) { anim = requestAnimationFrame(step) } else { spinning = false; btnDraw.disabled = false; reel.classList.remove('spinning') }
-      };
+      const step = (t) => { const p = Math.min(1, (t - t0) / duration), y = distance * ease(p); track.style.transform = 'translateY(' + y + 'px)'; if (p < 1) { anim = requestAnimationFrame(step) } else { spinning = false; btnDraw.disabled = false; reel.classList.remove('spinning') } };
       anim = requestAnimationFrame(step);
     }
 
     // ===== Render =====
-    const renderCfg = () => { const w = config.winnersPerRound ?? 3; cfgEl.textContent = `Rango: ${config.min}–${config.max} | Gana: ${config.touchesToWin} | Ganadores por ronda: ${w}`; };
-    const addHistory = (n) => { const tag = document.createElement('span'); const col = colorFor(n); tag.className = 'tag'; tag.setAttribute('data-color', col); tag.style.setProperty('--c', col); tag.textContent = n; historyEl.prepend(tag); };
+    const renderCfg = () => { const w = config.winnersPerRound ?? 3; cfgEl.textContent = 'Rango: ' + config.min + '–' + config.max + ' | Gana: ' + config.touchesToWin + ' | Ganadores por ronda: ' + w; };
+    const addHistory = (n) => { const tag = document.createElement('span'); const col = colorFor(n); tag.className = 'tag'; tag.style.setProperty('--c', col); tag.textContent = n; historyEl.prepend(tag); };
 
     // ===== Sockets =====
     socket.on('hydrate', ({ config: c, drawn }) => { config = c; renderCfg(); historyEl.innerHTML = ''; if (drawn?.length) { setReelTo(drawn[drawn.length - 1]); drawn.forEach(addHistory) } else { setReelTo('—') } });
     socket.on('round:reset', ({ config: c }) => { config = c; historyEl.innerHTML = ''; renderCfg(); setReelTo('—'); toast('🔁 Ronda reiniciada') });
     socket.on('draw', ({ number, config: c }) => { config = c; renderCfg(); spinTo(number, 5 + Math.floor(Math.random() * 4)); setTimeout(() => addHistory(number), 1400) });
-    socket.on('round:over', ({ winners, config: c }) => { config = c || config; toast(`🏁 Ronda terminada — Ganadores: ${winners?.join(', ') || '—'}`) });
+    socket.on('round:over', ({ winners, config: c }) => { config = c || config; toast('🏁 Ronda terminada — Ganadores: ' + (winners?.join(', ') || '—')) });
+
+    // ===== Modal Reset =====
+    const modal = document.getElementById('modal-reset');
+    const btnCancel = document.getElementById('mr-cancel');
+    const btnConfirm = document.getElementById('mr-confirm');
+    let lastFocused = null;
+
+    function focusables(root) {
+      return [...root.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')]
+        .filter(el => !el.hasAttribute('disabled'));
+    }
+    function trapTab(e) {
+      if (e.key !== 'Tab') return;
+      const f = focusables(modal); if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
+      else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+    }
+    function escToClose(e) { if (e.key === 'Escape') closeModal(); }
+    function openModal() {
+      lastFocused = document.activeElement;
+      modal.classList.add('is-open'); modal.setAttribute('aria-hidden', 'false');
+      (focusables(modal)[0] || btnCancel).focus();
+      modal.addEventListener('keydown', trapTab);
+      modal.addEventListener('keydown', escToClose);
+    }
+    function closeModal() {
+      modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true');
+      modal.removeEventListener('keydown', trapTab);
+      modal.removeEventListener('keydown', escToClose);
+      if (lastFocused) lastFocused.focus();
+    }
+    modal.addEventListener('click', (e) => { if (e.target.hasAttribute('data-close')) closeModal(); });
+    btnCancel.addEventListener('click', closeModal);
 
     // ===== Acciones =====
     btnDraw.addEventListener('click', () => { if (spinning) return; socket.emit('public:draw') });
-    btnReset.addEventListener('click', async () => {
-      if (spinning) return; if (!confirm('¿Reiniciar la ronda? Se borrará el historial.')) return;
-      try { btnReset.disabled = true; btnDraw.disabled = true; const res = await fetch('/api/admin/round/reset', { method: 'POST' }); if (!res.ok) throw new Error('No se pudo reiniciar') }
-      catch (e) { toast(e.message || 'Error al reiniciar') }
-      finally { btnReset.disabled = false; btnDraw.disabled = false }
+    btnReset.addEventListener('click', () => { if (!spinning) openModal(); });
+    window.addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'r' && !spinning) openModal(); });
+
+    btnConfirm.addEventListener('click', async () => {
+      try {
+        btnConfirm.disabled = true; btnCancel.disabled = true; btnConfirm.textContent = 'Reiniciando…';
+        const res = await fetch('/api/admin/round/reset', { method: 'POST' });
+        if (!res.ok) throw new Error('No se pudo reiniciar');
+        closeModal(); toast('🔁 Ronda reiniciada');
+      } catch (e) {
+        toast(e.message || 'Error al reiniciar');
+      } finally {
+        btnConfirm.disabled = false; btnCancel.disabled = false; btnConfirm.textContent = 'Sí, reiniciar';
+      }
     });
-    window.addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'r' && !spinning) btnReset.click() });
 
     // Reframe tras resize/orientación
     function reframe() {
