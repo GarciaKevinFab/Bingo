@@ -4,12 +4,85 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bingo — Admin · v2</title>
+  <title>Bingo — Admin · v3</title>
   <meta name="theme-color" content="#5b2cff" />
-  <!-- base styles (mismos del cliente Sala) -->
   <link rel="stylesheet" href="/styles.css" />
-  <!-- estilos específicos del admin -->
   <link rel="stylesheet" href="/admin.css" />
+  <style>
+    /* extras ligeros para progreso y badges */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #3b316e;
+      background: #231b47;
+      color: #cfd1ff;
+      font-size: 12px
+    }
+
+    .pill.good {
+      border-color: #2a7c2e;
+      background: #1c3820;
+      color: #c7ffd1
+    }
+
+    .pill.warn {
+      border-color: #b07b00;
+      background: #3a2a00;
+      color: #ffe4a3
+    }
+
+    .pill.plan {
+      border-color: #7848ff;
+      background: #281f4f;
+      color: #e3d5ff
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: #1b1530;
+      border: 1px solid #3b316e;
+      overflow: hidden
+    }
+
+    .bar>span {
+      display: block;
+      height: 100%
+    }
+
+    .bar .tiene {
+      background: #2bb673
+    }
+
+    .bar .cola {
+      background: #f3b14b
+    }
+
+    .tright {
+      text-align: right
+    }
+
+    .muted {
+      opacity: .85
+    }
+
+    .gap-sm {
+      gap: 8px
+    }
+
+    .btn-xs {
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 12px
+    }
+
+    table td small {
+      opacity: .9
+    }
+  </style>
 </head>
 
 <body>
@@ -17,12 +90,18 @@
     <div class="topbar">
       <h1>🛠️ Bingo — Panel Admin</h1>
       <span class="badge">.env · <code>ADMIN_PASSWORD</code></span>
+      <span id="pill-plan" class="pill plan" style="margin-left:auto;display:none;">Plan activo</span>
     </div>
 
     <div class="container admin-single">
       <article class="card">
         <header class="card-head">
           <h2 class="title">Admin</h2>
+          <div class="gap-sm" style="display:flex;flex-wrap:wrap">
+            <span id="pill-ganadores" class="pill">Ganadores: 0</span>
+            <span id="pill-objetivo" class="pill">Gana: 5</span>
+            <span id="pill-rango" class="pill">Rango: 1–10</span>
+          </div>
         </header>
 
         <!-- LOGIN -->
@@ -88,11 +167,14 @@
               <label for="plan-gap">Separación aleatoria (min–max)</label>
               <input id="plan-gap" type="text" value="1-4" />
             </div>
-            <div class="form-actions">
+            <div class="form-actions" style="display:flex;gap:8px">
               <button id="btn-plan" class="btn btn-primary">Planear</button>
+              <button id="btn-plan-clear" class="btn btn-ghost btn-xs" title="Cancelar plan">Cancelar</button>
             </div>
           </div>
-          <p class="small">Plan actual: <span id="plan-current">—</span> | Cola oculta: <span id="plan-left">0</span>
+          <p class="small">
+            Plan actual: <span id="plan-current">—</span> |
+            Cola oculta: <span id="plan-left">0</span>
           </p>
 
           <h3>Predicción (faltantes para ganar)</h3>
@@ -105,7 +187,6 @@
     </div>
   </main>
 
-  <!-- Toasts -->
   <div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
 
   <script src="/socket.io/socket.io.js"></script>
